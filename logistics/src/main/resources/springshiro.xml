@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	 http://www.springframework.org/schema/beans/spring-beans.xsd
+	 http://www.springframework.org/schema/aop
+	 http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+	
+	
+	<!-- shiro为集成springMvc 拦截异常 -->
+	<bean
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<!-- 没有权限异常跳转的页面 -->
+				<prop key="org.apache.shiro.authz.UnauthorizedException">unauthorized</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- 开启aop，对代理类 -->
+	<aop:config proxy-target-class="true"/>
+
+	<!-- 开启shiro的注解支持 -->
+	<bean
+		class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<!-- 注入安全管理器 -->
+		<property name="securityManager" ref="securityManager"></property>
+	</bean>
+	
+	
+	
+	
+	
+	
+	<!-- 自定义退出过滤器 -->
+	<bean id="myLogoutFilter" class="com.ngs.shiro.MyLogoutFilter">
+		<!-- 自定义退出路径，原本是根路径 -->
+		<property name="redirectUrl" value="/login.jsp"></property>
+	</bean>
+<!-- 	自定义表单过滤器 -->
+<bean id="myAuthenticationFilter" class="com.ngs.shiro.MyAuthenticationFilter"/>
+	<!-- 定义shiro安全框架 -->
+	<bean id="shiroFilter"
+		class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<!-- 安全管理器 -->
+		<property name="securityManager" ref="securityManager"></property>
+		<!-- 定义过滤器链 -->
+		<property name="filters">
+			<map>
+			<entry key="logout" value-ref="myLogoutFilter"/>
+			<entry key="authc"  value-ref="myAuthenticationFilter"/>
+			</map>
+		</property>
+		<!-- 认证成功跳转页面 -->
+		<property name="successUrl" value="/index.do" />
+		<!-- 认证失败跳转页面 -->
+		<property name="loginUrl" value="/admin/login.do" />
+		<!-- 配置过滤器链 -->
+		<property name="filterChainDefinitions">
+			<value>
+				<!-- 允许直接通过的静态东西 -->
+				/lib/**=anon
+				/static/**=anon
+				<!-- 登录页面 -->
+				/login.jsp=anon
+				<!-- 验证码 -->
+				/verifyCode.jsp=anon
+				<!-- 退出登录 -->
+<!-- 				记住我 -->
+				/index.do=user
+				/logout.do=logout
+				<!-- 表单认证器（自我感觉是其他所有需要认证的东西） -->
+				/**=authc
+			</value>
+		</property>
+	</bean>
+	<!-- 上面框架中的安全管理器 -->
+	<bean id="securityManager"
+		class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<!-- 自定义的reaml -->
+		<property name="realm" ref="customReaml"/>
+		<!-- 注入缓存 -->
+		<property name="cacheManager" ref="cacheManager"/>
+<!-- 		会话管理，就是session能活多久的 -->
+		<property name="sessionManager" ref="sessionManager"></property>
+<!-- 		记住我 -->
+		<property name="rememberMeManager" ref="rememberMeManager"/>
+	</bean>
+	<!-- 上面自定义的reaml -->
+	<bean id="customReaml" class="com.ngs.shiro.CustomReaml">
+		<!-- 自定义凭证匹配器 -->
+		<property name="credentialsMatcher" ref="credentialsMatcher"></property>
+	</bean>
+	<!-- 上面定义的凭证匹配器 -->
+	<bean id="credentialsMatcher"
+		class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+		<property name="hashAlgorithmName" value="MD5" />
+		<property name="hashIterations" value="3"></property>
+	</bean>
+	
+<!-- 	上面定义的缓存 -->
+	<!-- 缓存管理器 -->
+	<bean id="cacheManager"
+		class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<!-- 读取ehcache配置文件 -->
+		<property name="cacheManagerConfigFile"
+			value="classpath:shiro-ehcache.xml"></property>
+	</bean>
+<!-- 上面定义的会话管理 -->
+	 <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+	 		<!-- 设置session的失效时长，单位毫秒 -->
+		<property name="globalSessionTimeout" value="#{1000 * 3600 * 24 * 7}"></property>
+		
+		<!-- 删除失效的session -->
+		<property name="deleteInvalidSessions" value="true"/>
+	</bean>
+<!-- 上面定义的记住我 -->
+	<!-- 记住我 -->
+	<bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+		<!-- 注入cookie -->
+		<property name="cookie">
+			<bean class="org.apache.shiro.web.servlet.SimpleCookie">
+				<!-- 使用构造器设置cookie名称 -->
+				<constructor-arg value="rememberMe"/>
+			
+				<!-- 设置最大有效期 :单位秒 -->
+				<property name="maxAge" value="#{3600 * 24 * 7}"/>
+				
+			</bean>
+		</property>
+		
+	</bean>
+
+</beans>

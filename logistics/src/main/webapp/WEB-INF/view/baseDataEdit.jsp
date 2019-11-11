@@ -1,0 +1,127 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%
+String path = request.getContextPath();
+String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<base href="<%= basePath %>" />
+<meta name="renderer" content="webkit|ie-comp|ie-stand">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0,maximum-scale=1.0,baseData-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<!--[if lt IE 9]>
+<script type="text/javascript" src="lib/html5shiv.js"></script>
+<script type="text/javascript" src="lib/respond.min.js"></script>
+<![endif]-->
+<link rel="stylesheet" type="text/css" href="static/h-ui/css/H-ui.min.css" />
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/css/H-ui.admin.css" />
+<link rel="stylesheet" type="text/css" href="lib/Hui-iconfont/1.0.8/iconfont.css" />
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/skin/default/skin.css" id="skin" />
+<link rel="stylesheet" type="text/css" href="static/h-ui.admin/css/style.css" />
+<!--[if IE 6]>
+<script type="text/javascript" src="lib/DD_belatedPNG_0.0.8a-min.js" ></script>
+<script>DD_belatedPNG.fix('*');</script>
+<![endif]-->
+<title>添加管理员 - 管理员管理 - H-ui.admin v3.1</title>
+<meta name="keywords" content="H-ui.admin v3.1,H-ui网站后台模版,后台模版下载,后台管理系统模版,HTML后台模版下载">
+<meta name="description" content="H-ui.admin v3.1，是一款由国人开发的轻量级扁平化网站后台模板，完全免费开源的网站后台管理系统模版，适合中小型CMS后台系统。">
+</head>
+<body>
+<article class="page-container">
+	<form class="form form-horizontal" action="${empty baseData ? 'baseData/insert.do':'baseData/update.do'}" id="form-admin-add">
+<!-- 	隐藏域,因为现在当是修改的时候，需要知道修改的是哪一个，而这个时候，名字不能传过去 -->
+	<input type="hidden" name="baseId" value="${baseData.baseId}"/>
+<!-- 	名字 -->
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red">*</span>基本数据名：</label>
+		<div class="formControls col-xs-8 col-sm-9">
+			<input type="text" class="input-text" value="${baseData.baseName}" ${empty baseData ? '': 'disabled'}  placeholder="请输入基本数据名" id="baseName" name="baseName">
+		</div>
+	</div>
+<!-- 	url地址 -->
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red">*</span>基本数据描述：</label>
+		<div class="formControls col-xs-8 col-sm-9">
+			<input type="text" class="input-text" value="${baseData.baseDesc}" placeholder="请输入基本数据描述" id="baseDesc" name="baseDesc">
+		</div>
+	</div>
+<!-- 父类为何 -->
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3">父类：</label>
+		<div class="formControls col-xs-8 col-sm-9">
+		    <span class="select-box" style="width:150px;">
+			<select class="select" name="parentId" size="1">
+				<option value="">请选择</option>
+				<c:forEach items="${baseDataList}" var="item">
+					<option value="${item.baseId}" ${baseData.parentId eq item.baseId ? 'selected':'' }>${item.baseName}</option>
+				</c:forEach>
+			</select>
+			</span> 
+		</div>	
+	</div>
+<!-- 	提交信息 -->
+	<div class="row cl">
+		<div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3">
+			<input class="btn btn-primary radius" type="submit" value="&nbsp;&nbsp;提交&nbsp;&nbsp;">
+		</div>
+	</div>
+	</form>
+</article>
+
+<!--_footer 作为公共模版分离出去--> 
+<script type="text/javascript" src="lib/jquery/1.9.1/jquery.min.js"></script> 
+<script type="text/javascript" src="lib/layer/2.4/layer.js"></script>
+<script type="text/javascript" src="static/h-ui/js/H-ui.min.js"></script> 
+<script type="text/javascript" src="static/h-ui.admin/js/H-ui.admin.js"></script> <!--/_footer 作为公共模版分离出去-->
+
+<!--请在下方写此页面业务相关的脚本-->
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/jquery.validate.js"></script> 
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/validate-methods.js"></script> 
+<script type="text/javascript" src="lib/jquery.validation/1.14.0/messages_zh.js"></script> 
+<script type="text/javascript">
+$(function(){
+	$("#form-admin-add").validate({
+		rules:{
+			baseName:{
+				required:true,
+				remote: {
+				    url: "baseData/checkBaseDataname.do",     //后台处理程序
+				    type: "get",               //数据发送方式
+				    dataType: "json",           //接受数据格式   
+				    data: {                     //要传递的数据
+				    	baseName: function() {
+				            return $("#baseName").val();
+				        }
+				    }
+				}
+			}
+		},
+		messages:{
+			baseName:{
+				required:"基本数据名不能为空！",
+				remote: "该基本数据名已存在！"
+			}
+		},
+		submitHandler:function(form){
+			$(form).ajaxSubmit(function(data){
+				layer.msg(data.info,{icon:data.code,time:1000},function(){
+					if(data.code==1){
+						parent.refreshTable();
+						parent.layer.closeAll();
+					}
+				});
+				
+			});
+		}
+	});
+});
+</script> 
+<!--/请在上方写此页面业务相关的脚本-->
+</body>
+</html>
